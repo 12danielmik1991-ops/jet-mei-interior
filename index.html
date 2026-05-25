@@ -892,7 +892,7 @@ function actionsLastDays(meiName,n){
 
 async function loadDailyActions(){
   try{
-    const url=`https://gist.githubusercontent.com/12danielmik1991-ops/54c012a98e6d8f34986afca9d76f3539/raw/daily_actions.json?_=${Date.now()}`;
+    const url=`https://gist.githubusercontent.com/12danielmik1991-ops/60691ee9e29682c97ebf3cdf829d230d/raw/daily_actions.json?_=${Date.now()}`;
     const resp=await fetch(url,{cache:"no-store"});
     if(!resp.ok)throw new Error("status "+resp.status);
     const json=await resp.json();
