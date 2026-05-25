@@ -277,6 +277,11 @@
     <div class="card"><div class="card-label" data-i18n="best_city">Лучший город</div><div class="card-val orange" id="tskBestCity" style="font-size:16px;padding-top:4px">—</div><div class="card-sub" id="tskBestCityVal"></div></div>
   </div>
   <div class="city-filter" id="cityFilter2"></div>
+  <div style="display:flex;gap:14px;padding:4px 24px 8px;font-size:10px;font-family:'Space Mono',monospace;color:var(--text-dim);flex-wrap:wrap">
+    <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:hsl(140,70%,35%);border:1px solid hsl(140,80%,55%);border-radius:2px"></span>по слоту</span>
+    <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:hsl(28,70%,35%);border:1px solid hsl(28,80%,55%);border-radius:2px"></span>без слота<sup style="font-size:7px;opacity:0.6">*</sup></span>
+    <span style="display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:hsl(220,8%,32%);border:1px solid hsl(220,8%,45%);border-radius:2px"></span>не в боте<sup style="font-size:7px;opacity:0.6">?</sup></span>
+  </div>
   <div class="calendar-wrap"><table class="calendar-table" id="calTasks"></table></div>
 </div>
 
@@ -486,15 +491,29 @@ async function fetchBotData(){
     // === Очищаем WORKERS и заполняем из источника ===
     CITIES.forEach(c=>{WORKERS[c]=[];});
 
+    // Маппинг полного названия города → код (для synthetic-воркеров из Urent листа)
+    const CITY_NAME_TO_CODE={};
+    Object.entries(CITY_NAMES).forEach(([code,nm])=>{
+      const norm=nm.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+      CITY_NAME_TO_CODE[norm]=code;
+    });
+    const resolveCity=v=>{
+      if(!v)return null;
+      if(CITIES.includes(v))return v; // уже код
+      const norm=String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+      return CITY_NAME_TO_CODE[norm]||null;
+    };
+
     workersRaw.forEach(w=>{
       // gist формат: {nome, cidade, tg_username, ...}
       // sheet формат: {name, city, tg_username, ...}
       const name=w.nome||w.name;
-      const city=w.cidade||w.city;
+      const cityRaw=w.cidade||w.city;
+      const city=resolveCity(cityRaw);
       const tg_username=w.tg_username;
       const role=w.role||(w.cnpj?'MEI':'MEI');
 
-      if(!city||city==="ALL"||!CITIES.includes(city))return;
+      if(!city||!CITIES.includes(city))return;
       const tag=tg_username?'@'+tg_username:`@${name||'worker'}`.toLowerCase().replace(/\s+/g,'_');
       WORKERS[city].push({
         id:`db_${w.id||w.worker_id||tg_username||name}`,
@@ -502,7 +521,9 @@ async function fetchBotData(){
         tag:tag,
         role:role,
         cnpj:w.cnpj||'',
-        tg_id:w.tg_id
+        tg_id:w.tg_id,
+        notRegistered: !!w.not_registered,    // 🆕 пометка для рендеринга задач
+        source: w.source||(w.not_registered?'urent_sheet':'bot_db')
       });
     });
 
@@ -700,6 +721,30 @@ function renderSummary(){
   document.getElementById('sumEmptyPct').textContent=total>0?`${Math.round(empty/total*100)}${t('pct_open')}`:'';
 }
 
+function hasSlotOnDay(workerName,dateStr){
+  // Есть ли у этого MEI принятый слот в эту дату?
+  // window.allSlots содержит сырые слоты (из gist); каждый имеет acceptances[].
+  const slots=(window.allSlots||[]);
+  if(!slots.length)return false;
+  const wnNorm=normalizeName(workerName);
+  if(!wnNorm||wnNorm.size===0)return false;
+  for(const s of slots){
+    const sDate=String(s.data||s.date||'').slice(0,10);
+    if(sDate!==dateStr)continue;
+    const acc=s.acceptances||[];
+    if(!acc.length)continue;
+    for(const a of acc){
+      const an=normalizeName(a.name||'');
+      if(!an||an.size===0)continue;
+      // overlap test
+      let common=0;
+      wnNorm.forEach(w=>{if(an.has(w))common++;});
+      if(common>=2)return true;
+    }
+  }
+  return false;
+}
+
 function renderTasks(){
   const dim=new Date(curYear,curMonth+1,0).getDate();
   let html=buildCalHeader(dim)+'<tbody>';
@@ -731,8 +776,12 @@ function renderTasks(){
       const badgeHTML=meiRec?
         `<span class="act-badge act-${actType}" title="За 7 дней: ${act7.total} · за месяц: ${act7.totalMonth||0}">${actType} ${act7.total}</span>`:
         '';
+      // 🆕 пометка для MEI'ев работавших в Urent но не зарегистрированных в боте
+      const unregBadge=w.notRegistered?
+        `<span style="background:#6b7a99;color:#000;font-size:8px;padding:1px 4px;border-radius:3px;margin-left:4px;font-family:'Space Mono',monospace" title="MEI работал в Urent, но не зарегистрирован в боте">⚠ no_bot</span>`:'';
+      const nameStyle=w.notRegistered?'opacity:0.75;font-style:italic':'';
 
-      html+=`<tr><td class="worker-name-cell col-name"><span style="color:${rc};font-size:8px;font-family:\'Space Mono\',monospace;margin-right:3px">${w.role}</span>${w.name} ${badgeHTML}</td>`;
+      html+=`<tr><td class="worker-name-cell col-name" style="${nameStyle}"><span style="color:${rc};font-size:8px;font-family:\'Space Mono\',monospace;margin-right:3px">${w.role}</span>${w.name} ${badgeHTML}${unregBadge}</td>`;
       for(let d=1;d<=dim;d++){
         const dateStr=`${curYear}-${String(curMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         let dayA=0,nightA=0,totalA=0;
@@ -744,15 +793,43 @@ function renderTasks(){
         if(totalA===0){
           html+=`<td class="task-cell task-none-cell"></td>`;
         } else {
-          const isBat=actType==='BAT';
-          const baseHue=isBat?45:200;
-          const intensity=Math.min(totalA/80,1);
-          const lightness=isLight?(90-intensity*40):(15+intensity*30);
-          const saturation=50+intensity*40;
-          const bg=`hsl(${baseHue},${saturation}%,${lightness}%)`;
-          const brd=`hsl(${baseHue},80%,${isLight?'40%':'55%'})`;
-          const fg=isLight?(intensity>0.5?'#fff':'#222'):(intensity>0.4?'#fff':'#aaa');
-          html+=`<td class="task-cell" style="background:${bg};border:1px solid ${brd};color:${fg};font-weight:600" data-day="${d}" data-wname="${w.name}" data-city="${city}" data-tasks="${totalA}" data-day-cnt="${dayA}" data-night-cnt="${nightA}" data-type="${actType}" onmouseenter="showTaskTT(event,this)" onmouseleave="hideTT()">${totalA}</td>`;
+          // 🆕 определяем "со слотом / без слота / вне бота"
+          let slotStatus; // 'with_slot' | 'no_slot' | 'no_bot'
+          if(w.notRegistered){
+            slotStatus='no_bot';
+          } else if(hasSlotOnDay(w.name,dateStr)){
+            slotStatus='with_slot';
+          } else {
+            slotStatus='no_slot';
+          }
+          let bg,brd,fg,marker='';
+          if(slotStatus==='with_slot'){
+            // зелёная заливка — по плану
+            const intensity=Math.min(totalA/80,1);
+            const lightness=isLight?(90-intensity*40):(15+intensity*30);
+            const saturation=50+intensity*40;
+            bg=`hsl(140,${saturation}%,${lightness}%)`;
+            brd=`hsl(140,80%,${isLight?'40%':'55%'})`;
+            fg=isLight?(intensity>0.5?'#fff':'#222'):(intensity>0.4?'#fff':'#aaa');
+          } else if(slotStatus==='no_slot'){
+            // оранжевая — без слота, но зареган
+            const intensity=Math.min(totalA/80,1);
+            const lightness=isLight?(90-intensity*40):(15+intensity*30);
+            const saturation=50+intensity*40;
+            bg=`hsl(28,${saturation}%,${lightness}%)`;
+            brd=`hsl(28,80%,${isLight?'40%':'55%'})`;
+            fg=isLight?(intensity>0.5?'#fff':'#222'):(intensity>0.4?'#fff':'#aaa');
+            marker='*';
+          } else {
+            // серая — не зареган в боте
+            const intensity=Math.min(totalA/80,1);
+            const lightness=isLight?(90-intensity*30):(20+intensity*25);
+            bg=`hsl(220,8%,${lightness}%)`;
+            brd=`hsl(220,8%,${isLight?'55%':'45%'})`;
+            fg=isLight?(intensity>0.5?'#fff':'#222'):(intensity>0.4?'#fff':'#aaa');
+            marker='?';
+          }
+          html+=`<td class="task-cell" style="background:${bg};border:1px solid ${brd};color:${fg};font-weight:600" data-day="${d}" data-wname="${w.name}" data-city="${city}" data-tasks="${totalA}" data-day-cnt="${dayA}" data-night-cnt="${nightA}" data-type="${actType}" data-slot-status="${slotStatus}" onmouseenter="showTaskTT(event,this)" onmouseleave="hideTT()">${totalA}${marker?`<sup style="font-size:7px;opacity:0.6">${marker}</sup>`:''}</td>`;
         }
       }
       html+='</tr>';
