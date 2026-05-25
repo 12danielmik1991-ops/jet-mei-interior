@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JET MEI Litoral</title>
+<title>JET MEI Interior</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
   :root{--bg:#0a0d12;--surface:#111520;--surface2:#181e2e;--border:#1f2a40;--accent:#00e5ff;--accent2:#ff4757;--accent3:#2ed573;--accent4:#ffa502;--text:#e8edf5;--text-dim:#6b7a99;--slot-full:#0d2e1a;--slot-full-border:#2ed573;--slot-partial:#2a1e08;--slot-partial-border:#ffa502;--slot-empty:#1a0d0d;--slot-empty-border:#ff4757;--slot-none:#0f1219;--radius:6px;--shadow:0 4px 20px rgba(0,0,0,.4)}
@@ -125,8 +125,8 @@
 <div id="authOverlay">
   <div class="auth-box">
     <div class="auth-logo">⚡</div>
-    <div class="auth-title">JET MEI Litoral</div>
-    <div class="auth-sub">SP-LITORAL · BRSPL · ADMIN</div>
+    <div class="auth-title">JET MEI Interior</div>
+    <div class="auth-sub">SP-INTERIOR · BRSP · ADMIN</div>
     <input class="auth-input" type="password" id="authInput" placeholder="Senha / Пароль" onkeydown="if(event.key==='Enter')checkAuth()">
     <button class="auth-btn" onclick="checkAuth()">Entrar / Войти</button>
     <div class="auth-error" id="authError">Senha incorreta / Неверный пароль</div>
@@ -137,8 +137,8 @@
   <div class="logo">
     <div class="logo-icon">⚡</div>
     <div>
-      <div class="logo-text">JET MEI Litoral</div>
-      <div class="logo-sub">SP-LITORAL · BRSPL</div>
+      <div class="logo-text">JET MEI Interior</div>
+      <div class="logo-sub">SP-INTERIOR · BRSP</div>
     </div>
   </div>
   <div class="header-right">
@@ -311,17 +311,17 @@ function checkAuth(){
 function logout(){sessionStorage.removeItem(SESSION_KEY);location.reload();}
 
 // ── DATA ─────────────────────────────────────────────
-const CITIES=['PG','GR','KG','IB','UB','MN','BR','IT','PE'];
-const CITY_NAMES={PG:'Praia Grande',GR:'Guarujá',KG:'Caraguatatuba',IB:'Ilhabela',UB:'Ubatuba',MN:'Mongaguá',BR:'Bertioga',IT:'Itanhaém',PE:'Peruíbe'};
+const CITIES=['SO','CP','SJ','CJ'];
+const CITY_NAMES={SO:'Sorocaba',CP:'Campinas',SJ:'São José dos Campos',CJ:'Campos do Jordão'};
 const WORKERS={
   PG:[{id:'leandro',name:'Leandro Medeiros',tag:'@Leandro_Medeiros_SUO_PG',role:'SUP'},{id:'julio_j',name:'Julio Jesus',tag:'@Julio_Jesus_AUX_PG',role:'AUX'},{id:'mei_pg1',name:'MEI PG-1',tag:'@mei_pg1',role:'MEI'},{id:'mei_pg2',name:'MEI PG-2',tag:'@mei_pg2',role:'MEI'}],
-  GR:[{id:'michael',name:'Michael Freitas',tag:'@Michael_Freitas_SUO_BRSPL',role:'SUP'},{id:'mei_gr1',name:'MEI GR-1',tag:'@mei_gr1',role:'MEI'},{id:'mei_gr2',name:'MEI GR-2',tag:'@mei_gr2',role:'MEI'}],
-  KG:[{id:'joao_g',name:'João Guimarães',tag:'@Joao_Guimareas_LID_BRSPL',role:'LID'},{id:'mei_kg1',name:'MEI KG-1',tag:'@mei_kg1',role:'MEI'}],
-  IB:[{id:'joao_ib',name:'João Guimarães IB',tag:'@Joao_Guimareas_LID_BRSPL',role:'LID'},{id:'mei_ib1',name:'MEI IB-1',tag:'@mei_ib1',role:'MEI'}],
-  UB:[{id:'julio_c',name:'Julio Cesar',tag:'@Julio_Cesar_LID_BRSPL',role:'LID'},{id:'mei_ub1',name:'MEI UB-1',tag:'@mei_ub1',role:'MEI'}],
+  GR:[{id:'michael',name:'Michael Freitas',tag:'@Michael_Freitas_SUO_BRSP',role:'SUP'},{id:'mei_gr1',name:'MEI GR-1',tag:'@mei_gr1',role:'MEI'},{id:'mei_gr2',name:'MEI GR-2',tag:'@mei_gr2',role:'MEI'}],
+  KG:[{id:'joao_g',name:'João Guimarães',tag:'@Joao_Guimareas_LID_BRSP',role:'LID'},{id:'mei_kg1',name:'MEI KG-1',tag:'@mei_kg1',role:'MEI'}],
+  IB:[{id:'joao_ib',name:'João Guimarães IB',tag:'@Joao_Guimareas_LID_BRSP',role:'LID'},{id:'mei_ib1',name:'MEI IB-1',tag:'@mei_ib1',role:'MEI'}],
+  UB:[{id:'julio_c',name:'Julio Cesar',tag:'@Julio_Cesar_LID_BRSP',role:'LID'},{id:'mei_ub1',name:'MEI UB-1',tag:'@mei_ub1',role:'MEI'}],
   MN:[{id:'mei_mn1',name:'MEI MN-1',tag:'@mei_mn1',role:'MEI'}],
   BR:[{id:'patrick',name:'Patrick Bledes',tag:'@Patrick_Bledes_COO_BRT',role:'SUP'},{id:'mei_br1',name:'MEI BR-1',tag:'@mei_br1',role:'MEI'}],
-  IT:[{id:'matheus',name:'Matheus',tag:'@Matheus_LID_BRSPL',role:'LID'},{id:'mei_it1',name:'MEI IT-1',tag:'@mei_it1',role:'MEI'}],
+  IT:[{id:'matheus',name:'Matheus',tag:'@Matheus_LID_BRSP',role:'LID'},{id:'mei_it1',name:'MEI IT-1',tag:'@mei_it1',role:'MEI'}],
   PE:[{id:'mei_pe1',name:'MEI PE-1',tag:'@mei_pe1',role:'MEI'}]
 };
 const ROLE_COLOR={SUP:'#00e5ff',LID:'#ffa502',AUX:'#a78bfa',MEI:'#6b7a99'};
@@ -405,7 +405,7 @@ async function fetchBotData(){
   try{
     // Источник 1: GitHub Gist (бот пишет туда каждые 5 мин из БД)
     const GIST_USER="12danielmik1991-ops";
-    const GIST_ID="54c012a98e6d8f34986afca9d76f3539";
+    const GIST_ID="60691ee9e29682c97ebf3cdf829d230d";
     const ts=Date.now();
     const gistUrl=f=>`https://gist.githubusercontent.com/${GIST_USER}/${GIST_ID}/raw/${f}?_=${ts}`;
 
